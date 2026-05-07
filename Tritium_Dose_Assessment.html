@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=Source+Code+Pro:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tritium Dose Calculator &mdash; ECPDA</title>
+<style>
+:root {
+  --paper:      #f2f4f6;
+  --paper-soft: #f8f9fb;
+  --paper-card: #ffffff;
+  --ink:        #161c26;
+  --ink-soft:   #2e3a4e;
+  --ink-faint:  #667385;
+  --rule:       #1e3a5f;
+  --rule-faint: #bcc8d8;
+  --accent:     #1e3a5f;
+
+  /* Pathway colors */
+  --c-water:  #15558a;
+  --c-air:    #0e6b52;
+  --c-food:   #5b3585;
+  --c-veg:    #1a7a3a;
+  --c-cereal: #b05e00;
+  --c-milk:   #1a5fa0;
+  --c-meat:   #a01a1a;
+  --c-fish:   #0a7a8a;
+
+  /* Tinted section backgrounds */
+  --bg-water:  #e8f1f9;
+  --bg-air:    #e5f4ef;
+  --bg-food:   #f0eaf8;
+  --bg-common: #eef1f6;
+  --bg-result: #f0f8f5;
+
+  --serif:   'Crimson Pro', 'EB Garamond', 'Georgia', 'Cambria', serif;
+  --sans:    'Inter', 'Segoe UI', 'Arial', sans-serif;
+  --mono:    'Source Code Pro', 'Consolas', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--sans);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 20px 16px 48px;
+}
+
+.wrapper { max-width: 960px; margin: 0 auto; }
+
+/* ── Masthead ── */
+.masthead {
+  border-bottom: 3px solid var(--rule);
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+}
+.masthead-meta {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 6px;
+}
+.masthead h1 {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+.masthead h1 .iso { color: var(--accent); }
+.masthead .subtitle {
+  font-size: 0.88rem;
+  color: var(--ink-faint);
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule-faint);
+  border-top: 3px solid var(--accent);
+  border-radius: 4px;
+  padding: 18px 22px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.card.water-card  { border-top-color: var(--c-water);  background: var(--bg-water); }
+.card.air-card    { border-top-color: var(--c-air);    background: var(--bg-air); }
+.card.food-card   { border-top-color: var(--c-food);   background: var(--bg-food); }
+.card.result-card { border-top-color: var(--c-air);    background: var(--bg-result); }
+
+/* ── Pathway headers ── */
+.pathway-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; cursor: pointer; user-select: none;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule-faint);
+}
+.pathway-icon { font-size: 1.1rem; }
+.pathway-title {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+}
+.water-title  { color: var(--c-water) !important; }
+.air-title    { color: var(--c-air) !important; }
+.food-title   { color: var(--c-food) !important; }
+.common-title { color: var(--accent) !important; }
+.pathway-toggle {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  transition: transform 0.15s;
+}
+.pathway-toggle.open { transform: rotate(90deg); }
+.pathway-body { display: block; }
+.pathway-body.collapsed { display: none; }
+
+/* ── Formula bar ── */
+.formula-bar {
+  background: var(--paper-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+  font-family: var(--serif);
+}
+.formula-bar span { color: var(--accent); font-weight: 700; }
+
+/* ── Section labels ── */
+.sec-label {
+  font-family: var(--mono);
+  font-size: 0.63rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+  margin-top: 14px;
+}
+
+/* ── Grid layouts ── */
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+/* ── Input groups ── */
+.ig { margin-bottom: 10px; }
+label {
+  display: block;
+  font-size: 0.79rem;
+  color: var(--ink-soft);
+  margin-bottom: 3px;
+  font-family: var(--sans);
+}
+label span.sym {
+  font-family: var(--serif);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.input-row { display: flex; gap: 6px; align-items: center; }
+input[type="number"] {
+  flex: 1;
+  background: #ffffff;
+  border: 1px solid var(--rule-faint);
+  border-bottom: 2px solid #bcc8d8;
+  border-radius: 3px;
+  color: var(--ink);
+  padding: 7px 10px;
+  font-size: 0.86rem;
+  font-family: var(--mono);
+  outline: none;
+  transition: border-color 0.2s;
+}
+input[type="number"]:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 var(--accent);
+}
+select {
+  background: #ffffff;
+  border: 1px solid var(--rule-faint);
+  border-radius: 3px;
+  color: var(--ink-soft);
+  padding: 7px 6px;
+  font-size: 0.78rem;
+  font-family: var(--sans);
+  outline: none;
+  cursor: pointer;
+}
+select:focus { border-color: var(--accent); }
+.note {
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  margin-top: 2px;
+  line-height: 1.4;
+  font-family: var(--sans);
+}
+
+/* ── Checkbox ── */
+.chk-row {
+  display: flex; align-items: center; gap: 7px;
+  margin: 6px 0; font-size: 0.78rem;
+  color: var(--ink-soft); cursor: pointer;
+}
+input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+
+/* ── Toggle buttons ── */
+.toggle-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 6px; align-items: center; }
+.tl { font-size: 0.72rem; color: var(--ink-faint); font-family: var(--mono); letter-spacing: 0.05em; }
+.tbtn {
+  padding: 5px 14px;
+  border-radius: 2px;
+  border: 1px solid var(--rule-faint);
+  background: #ffffff;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  transition: all 0.15s;
+}
+.tbtn:hover { border-color: var(--accent); color: var(--accent); }
+.tbtn.a-both   { background: #f0eaf8; border-color: var(--c-food);   color: var(--c-food);   font-weight:700; }
+.tbtn.a-tfwt   { background: #e5f0fa; border-color: var(--c-milk);   color: var(--c-milk);   font-weight:700; }
+.tbtn.a-obt    { background: #e5f4ef; border-color: var(--c-air);    color: var(--c-air);    font-weight:700; }
+.tbtn.a-adult  { background: #e8f1f9; border-color: var(--c-water);  color: var(--c-water);  font-weight:700; }
+.tbtn.a-infant { background: #fef3e2; border-color: var(--c-cereal); color: var(--c-cereal); font-weight:700; }
+.tbtn.a-max    { background: #f0eaf8; border-color: var(--c-food);   color: var(--c-food);   font-weight:700; }
+
+/* ── Matrix cards ── */
+.mx-card {
+  background: var(--paper-soft);
+  border-radius: 3px;
+  border: 1px solid var(--rule-faint);
+  border-left: 4px solid var(--rule-faint);
+  margin-bottom: 8px;
+}
+.mx-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; cursor: pointer;
+}
+.mx-hdr:hover { background: rgba(0,0,0,0.02); }
+.mx-title-wrap { display: flex; align-items: center; gap: 8px; }
+.mx-icon { font-size: 1rem; }
+.mx-name {
+  font-family: var(--serif);
+  font-size: 0.90rem;
+  font-weight: 700;
+}
+.mx-sub  { font-size: 0.67rem; color: var(--ink-faint); font-family: var(--mono); letter-spacing: 0.04em; }
+.mx-arr  { font-size: 0.70rem; color: var(--ink-faint); transition: transform 0.15s; }
+.mx-arr.open { transform: rotate(90deg); }
+.mx-body { display: none; padding: 12px 14px; border-top: 1px solid var(--rule-faint); }
+.mx-body.open { display: block; }
+
+.veg-c    { border-left-color: var(--c-veg) !important;   } .veg-n    { color: var(--c-veg);    }
+.cereal-c { border-left-color: var(--c-cereal) !important;} .cereal-n { color: var(--c-cereal); }
+.milk-c   { border-left-color: var(--c-milk) !important;  } .milk-n   { color: var(--c-milk);   }
+.meat-c   { border-left-color: var(--c-meat) !important;  } .meat-n   { color: var(--c-meat);   }
+.fish-c   { border-left-color: var(--c-fish) !important;  } .fish-n   { color: var(--c-fish);   }
+
+/* ── Info box ── */
+.info-box {
+  background: #fefbf0;
+  border-left: 3px solid var(--c-cereal);
+  border-radius: 0 3px 3px 0;
+  padding: 7px 12px;
+  margin-bottom: 10px;
+  font-size: 0.73rem;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.info-box b { color: var(--c-cereal); }
+
+/* ── Divider ── */
+.divider { border: none; border-top: 1px solid var(--rule-faint); margin: 14px 0; }
+
+/* ── Calculate button ── */
+.calc-btn {
+  width: 100%;
+  background: var(--rule);
+  color: #ffffff;
+  border: none;
+  border-radius: 3px;
+  padding: 13px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--serif);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 8px;
+}
+.calc-btn:hover { background: #0f2440; transform: translateY(-1px); }
+
+/* ── Results ── */
+.grand-dose {
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--c-air);
+  margin: 8px 0 2px;
+}
+.grand-unit { text-align: center; font-size: 0.80rem; color: var(--ink-faint); margin-bottom: 16px; }
+
+.rt { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.rt th {
+  background: var(--rule);
+  color: #ffffff;
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 700;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+}
+.rt td { padding: 7px 10px; border-bottom: 1px solid #e8ecf0; color: var(--ink-soft); }
+.rt tr:hover td { background: #f4f8fb; }
+.rt .pw-hdr td {
+  background: var(--paper);
+  color: var(--ink-faint);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+}
+.rt .pw-hdr.water-hdr td { color: var(--c-water); border-left: 3px solid var(--c-water); }
+.rt .pw-hdr.air-hdr   td { color: var(--c-air);   border-left: 3px solid var(--c-air);   }
+.rt .pw-hdr.food-hdr  td { color: var(--c-food);  border-left: 3px solid var(--c-food);  }
+.rt .tfwt-row td { color: var(--c-water); }
+.rt .obt-row  td { color: var(--c-air); }
+.rt .sub-row  td { font-weight: 700; border-top: 1px solid var(--rule-faint); font-size: 0.79rem; background: var(--paper-soft); }
+.rt .water-sub td { color: var(--c-water); }
+.rt .air-sub   td { color: var(--c-air);   }
+.rt .food-sub  td { color: var(--c-food);  }
+.rt .grand-row td {
+  color: #ffffff;
+  font-weight: 800;
+  border-top: 2px solid var(--rule);
+  font-size: 0.85rem;
+  background: var(--rule);
+}
+
+/* ── Step box ── */
+.step-box {
+  background: var(--paper-soft);
+  border: 1px solid var(--rule-faint);
+  border-radius: 3px;
+  padding: 12px 16px;
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+  line-height: 2.0;
+  margin-top: 14px;
+  font-family: var(--mono);
+}
+.step-box b { color: var(--ink); font-family: var(--sans); }
+.step-box .pw-sec {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-family: var(--mono);
+}
+
+/* ── Context chips ── */
+.ctx-bar { display: flex; gap: 7px; margin-top: 12px; flex-wrap: wrap; }
+.chip {
+  padding: 4px 12px;
+  border-radius: 2px;
+  font-size: 0.70rem;
+  font-weight: 700;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  border: 1px solid;
+}
+.c-low  { background: #e8f5ee; color: #166534; border-color: #a7d7b5; }
+.c-med  { background: #fef3e2; color: #92400e; border-color: #f5c87a; }
+.c-high { background: #fee2e2; color: #991b1b; border-color: #f5a5a5; }
+.c-info { background: #e8f1f9; color: #1e3a5f; border-color: #a8c4de; }
+.c-warn { background: #fef3e2; color: #b45309; border-color: #f5c87a; }
+
+/* ── Footnote ── */
+.footnote {
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  margin-top: 12px;
+  padding-bottom: 16px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  border-top: 1px solid var(--rule-faint);
+  padding-top: 12px;
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- == HEADER ============================================================== -->
+<div class="card">
+  <div class="main-header">
+    <h1>&#9762; Tritium Committed Effective Dose Calculator</h1>
+    <p>Drinking Water Ingestion &middot; Inhalation + Skin Absorption &middot; Food Ingestion (TFWT &amp; OBT) &nbsp;|&nbsp; ECPDA / IAEA SRS-19</p>
+  </div>
+
+  <!-- Age & form selectors (global) -->
+  <div class="sec-label">1. Age Group &amp; Dose Options</div>
+  <div class="toggle-row">
+    <span class="tl">Age:</span>
+    <div class="tbtn a-adult" id="t_adult"  onclick="setAge('adult')">Adult</div>
+    <div class="tbtn"         id="t_infant" onclick="setAge('infant')">Infant</div>
+    <div class="tbtn"         id="t_max"    onclick="setAge('max')">Both (max)</div>
+    <span class="tl" style="margin-left:12px;">Food form:</span>
+    <div class="tbtn a-both" id="t_both" onclick="setDT('both')">TFWT + OBT</div>
+    <div class="tbtn"        id="t_tfwt" onclick="setDT('tfwt')">TFWT only</div>
+    <div class="tbtn"        id="t_obt"  onclick="setDT('obt')">OBT only</div>
+  </div>
+
+  <!-- Common concentration inputs -->
+  <div class="sec-label">2. Common Input Concentrations</div>
+  <div class="grid2">
+    <div class="ig">
+      <label><span class="sym">C<sub>HTO,atm</sub></span> &mdash; Annual avg HTO in ground-level air</label>
+      <div class="input-row">
+        <input type="number" id="Ca" placeholder="e.g. 0.57" min="0" step="any">
+        <select id="CaUnit"><option value="1">Bq/m&#179;</option><option value="1e-3">mBq/m&#179;</option><option value="1000">kBq/m&#179;</option></select>
+      </div>
+      <div class="note">Used for: Inhalation dose &amp; CTFWT calculation for food pathway</div>
+    </div>
+    <div class="ig">
+      <label><span class="sym">C<sub>w</sub></span> &mdash; Annual avg HTO in water</label>
+      <div class="input-row">
+        <input type="number" id="Cw" placeholder="e.g. 17.5" min="0" step="any">
+        <select id="CwUnit"><option value="1">Bq/L</option><option value="1e-3">mBq/L</option><option value="1000">kBq/L</option></select>
+      </div>
+      <div class="note">Used for: Drinking water ingestion dose &amp; animal/fish food concentrations</div>
+    </div>
+  </div>
+
+  <!-- CTFWT chain parameters -->
+  <div class="sec-label">3. C<sub>TFWT</sub> Chain Parameters</div>
+  <div class="grid4">
+    <div class="ig">
+      <label><span class="sym">H<sub>a</sub></span> &mdash; Absolute humidity (kg/m&#179;)</label>
+      <input type="number" id="Ha" value="0.0067" step="0.0001" min="0">
+      <div class="note">Default: 0.0067</div>
+    </div>
+    <div class="ig">
+      <label><span class="sym">CR<sub>s</sub></span> &mdash; C<sub>SW</sub>/C<sub>am</sub> ratio</label>
+      <input type="number" id="CRs" value="0.23" step="0.01">
+      <div class="note">Default: 0.23</div>
+    </div>
+    <div class="ig">
+      <label><span class="sym">RH</span> &mdash; Relative humidity (fractional)</label>
+      <input type="number" id="RH" value="0.73" step="0.01" min="0" max="1">
+      <div class="note">Default: 0.73</div>
+    </div>
+    <div class="ig">
+      <label><span class="sym">&gamma;</span> &mdash; Vapour pressure ratio HTO/H<sub>2</sub>O</label>
+      <input type="number" id="gamma" value="0.909" step="0.001">
+      <div class="note">Default: 0.909</div>
+    </div>
+  </div>
+</div>
+
+<!-- == PATHWAY 1: DRINKING WATER =========================================== -->
+<div class="card water-card">
+  <div class="pathway-header" onclick="togglePW('water')">
+    <span class="pathway-icon">&#128167;</span>
+    <span class="pathway-title water-title">Pathway 1 &mdash; Drinking Water Ingestion</span>
+    <span class="pathway-toggle" id="pw_arr_water">&#9660;</span>
+  </div>
+  <div class="pathway-body" id="pw_water">
+    <div class="formula-bar"><span>D<sub>water</sub></span> = C<sub>w</sub> &times; IR &times; DCF<sub>ing</sub> &times; f<sub>fb</sub></div>
+    <div class="grid3">
+      <div class="ig">
+        <label><span class="sym">IR</span> &mdash; Water intake rate</label>
+        <div class="input-row">
+          <input type="number" id="IR_a" value="0.73" step="0.01">
+        </div>
+        <div class="note">Adult: 0.73 m<sup>3</sup>/y (730 L/y) | Indian default (NIN)</div>
+      </div>
+      <div class="ig">
+        <label><span class="sym">IR</span> &mdash; Water intake rate &mdash; Infant</label>
+        <input type="number" id="IR_i" value="0.26" step="0.01">
+        <div class="note">Infant: 0.26 m<sup>3</sup>/y (260 L/y)</div>
+      </div>
+      <div class="ig">
+        <label><span class="sym">f<sub>fb</sub></span> &mdash; Fraction from local water body</label>
+        <input type="number" id="ffb" value="1.0" step="0.01" min="0" max="1">
+        <div class="note">Default: 1.0 (conservative)</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="ig">
+        <label>DCF HTO Ingestion &mdash; Adult (Sv/Bq)</label>
+        <input type="number" id="DCF_w_a" value="1.8e-11" step="any">
+        <div class="note">Default: 1.8&times;10<sup>-11</sup> Sv/Bq</div>
+      </div>
+      <div class="ig">
+        <label>DCF HTO Ingestion &mdash; Infant (Sv/Bq)</label>
+        <input type="number" id="DCF_w_i" value="6.4e-11" step="any">
+        <div class="note">Default: 6.4&times;10<sup>-11</sup> Sv/Bq</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- == PATHWAY 2: AIR INHALATION ============================================ -->
+<div class="card air-card">
+  <div class="pathway-header" onclick="togglePW('air')">
+    <span class="pathway-icon">&#127788;</span>
+    <span class="pathway-title air-title">Pathway 2 &mdash; Inhalation + Skin Absorption</span>
+    <span class="pathway-toggle" id="pw_arr_air">&#9660;</span>
+  </div>
+  <div class="pathway-body" id="pw_air">
+    <div class="formula-bar"><span>D<sub>inh</sub></span> = C<sub>HTO,atm</sub> &times; BR &times; DCF<sub>inh</sub> &nbsp;|&nbsp; Skin absorption = 50% of inhaled (HTO only)</div>
+    <div class="grid2">
+      <div class="ig">
+        <label><span class="sym">BR</span> &mdash; Breathing rate &mdash; Adult (m<sup>3</sup>/y)</label>
+        <div class="input-row">
+          <input type="number" id="BR_a" value="8400" step="100">
+          <select id="BR_preset_a" onchange="applyBR('a')">
+            <option value="">-- Presets --</option>
+            <option value="8400">Adult (8400 m&#179;/y)</option>
+            <option value="8030">Adult public 24h (8030 m&#179;/y)</option>
+          </select>
+        </div>
+        <div class="note">ICRP/ECPDA default adult: 8400 m<sup>3</sup>/y (22.2 m<sup>3</sup>/day &times; 365)</div>
+      </div>
+      <div class="ig">
+        <label><span class="sym">BR</span> &mdash; Breathing rate &mdash; Infant (m<sup>3</sup>/y)</label>
+        <div class="input-row">
+          <input type="number" id="BR_i" value="1400" step="100">
+          <select id="BR_preset_i" onchange="applyBR('i')">
+            <option value="">-- Presets --</option>
+            <option value="1400">Infant (1400 m&#179;/y)</option>
+          </select>
+        </div>
+        <div class="note">ECPDA default infant: 1400 m<sup>3</sup>/y</div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="ig">
+        <label>DCF HTO Inhalation &mdash; Adult (Sv/Bq)</label>
+        <div class="input-row">
+          <input type="number" id="DCF_inh_a" value="1.8e-11" step="any">
+          <select onchange="document.getElementById('DCF_inh_a').value=this.value">
+            <option value="">-- Preset --</option>
+            <option value="1.8e-11">HTO Adult (1.8&times;10<sup>-11</sup>)</option>
+            <option value="1.8e-15">HT Gas Adult (1.8&times;10<sup>-15</sup>)</option>
+          </select>
+        </div>
+      </div>
+      <div class="ig">
+        <label>DCF HTO Inhalation &mdash; Infant (Sv/Bq)</label>
+        <div class="input-row">
+          <input type="number" id="DCF_inh_i" value="6.4e-11" step="any">
+          <select onchange="document.getElementById('DCF_inh_i').value=this.value">
+            <option value="">-- Preset --</option>
+            <option value="6.4e-11">HTO Infant (6.4&times;10<sup>-11</sup>)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <label class="chk-row">
+      <input type="checkbox" id="skinCheck"> Include skin absorption (+50% of inhaled HTO intake) &mdash; occupational/conservative
+    </label>
+  </div>
+</div>
+
+<!-- == PATHWAY 3: FOOD INGESTION ============================================ -->
+<div class="card food-card">
+  <div class="pathway-header" onclick="togglePW('food')">
+    <span class="pathway-icon">&#127869;</span>
+    <span class="pathway-title food-title">Pathway 3 &mdash; Food Ingestion (TFWT &amp; OBT)</span>
+    <span class="pathway-toggle" id="pw_arr_food">&#9660;</span>
+  </div>
+  <div class="pathway-body" id="pw_food">
+    <div class="formula-bar">
+      <span>D<sub>food</sub></span> = C<sub>food</sub> &times; H<sub>p</sub> &times; DCF &times; f<sub>d</sub> &nbsp;|&nbsp;
+      <span>C<sub>OBT,plant</sub></span> = (1&minus;WC<sub>p</sub>) &times; WEQ &times; R<sub>p</sub> &times; C<sub>TFWT</sub>
+    </div>
+
+    <!-- VEGETABLES -->
+    <div class="mx-card veg-c">
+      <div class="mx-hdr" onclick="toggleMX('veg',this)">
+        <div class="mx-title-wrap"><span class="mx-icon">&#129388;</span><div><div class="mx-name veg-n">Vegetables</div><div class="mx-sub">WC<sub>p</sub> &asymp; 0.92</div></div></div>
+        <span class="mx-arr" id="mx_arr_veg">&#9660;</span>
+      </div>
+      <div class="mx-body" id="mx_body_veg">
+        <div class="grid3">
+          <div class="ig"><label><span class="sym">WC<sub>p</sub></span></label><input type="number" id="WCp_veg" value="0.92" step="0.01"><div class="note">Default: 0.92</div></div>
+          <div class="ig"><label><span class="sym">WEQ</span> (L/kg DM)</label><input type="number" id="WEQ_veg" value="0.51" step="0.01"><div class="note">Default: 0.51</div></div>
+          <div class="ig"><label><span class="sym">R<sub>p</sub></span></label><input type="number" id="Rp_veg" value="0.54" step="0.01"><div class="note">Default: 0.54</div></div>
+        </div>
+        <div class="grid2">
+          <div class="ig"><label>H<sub>p</sub> Adult (kg/y)</label><input type="number" id="Hp_veg_a" value="191.7" step="1"><div class="note">Indian default (NIN)</div></div>
+          <div class="ig"><label>H<sub>p</sub> Infant (kg/y)</label><input type="number" id="Hp_veg_i" value="39.3" step="1"></div>
+        </div>
+        <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_veg" value="1.0" step="0.01" style="max-width:120px;"><div class="note">Default: 1.0</div></div>
+      </div>
+    </div>
+
+    <!-- CEREALS -->
+    <div class="mx-card cereal-c">
+      <div class="mx-hdr" onclick="toggleMX('cereal',this)">
+        <div class="mx-title-wrap"><span class="mx-icon">&#127806;</span><div><div class="mx-name cereal-n">Cereals &amp; Pulses</div><div class="mx-sub">WC<sub>p</sub> &asymp; 0.13</div></div></div>
+        <span class="mx-arr" id="mx_arr_cereal">&#9660;</span>
+      </div>
+      <div class="mx-body" id="mx_body_cereal">
+        <div class="grid3">
+          <div class="ig"><label><span class="sym">WC<sub>p</sub></span></label><input type="number" id="WCp_cereal" value="0.13" step="0.01"><div class="note">Rice/wheat&asymp;0.12&ndash;0.14</div></div>
+          <div class="ig"><label><span class="sym">WEQ</span> (L/kg DM)</label><input type="number" id="WEQ_cereal" value="0.51" step="0.01"><div class="note">Default: 0.51</div></div>
+          <div class="ig"><label><span class="sym">R<sub>p</sub></span></label><input type="number" id="Rp_cereal" value="0.54" step="0.01"><div class="note">Default: 0.54</div></div>
+        </div>
+        <div class="grid2">
+          <div class="ig"><label>H<sub>p</sub> Adult (kg/y)</label><input type="number" id="Hp_cereal_a" value="191.6" step="1"><div class="note">Indian default (NIN)</div></div>
+          <div class="ig"><label>H<sub>p</sub> Infant (kg/y)</label><input type="number" id="Hp_cereal_i" value="39.2" step="1"></div>
+        </div>
+        <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_cereal" value="1.0" step="0.01" style="max-width:120px;"></div>
+      </div>
+    </div>
+
+    <!-- MILK -->
+    <div class="mx-card milk-c">
+      <div class="mx-hdr" onclick="toggleMX('milk',this)">
+        <div class="mx-title-wrap"><span class="mx-icon">&#129371;</span><div><div class="mx-name milk-n">Milk</div><div class="mx-sub">HTO &amp; OBT transfer</div></div></div>
+        <span class="mx-arr" id="mx_arr_milk">&#9660;</span>
+      </div>
+      <div class="mx-body" id="mx_body_milk">
+        <div class="grid2">
+          <div class="ig"><label><span class="sym">F<sub>m</sub></span> &mdash; HTO milk transfer (Bq/kg FW)/(Bq/L)</label><input type="number" id="Fm" value="0.87" step="0.01"><div class="note">Default: 0.87 cow milk</div></div>
+          <div class="ig"><label><span class="sym">F<sub>f,OBT</sub></span> &mdash; OBT milk transfer (Bq/kg FW)/(Bq/kg DW)</label><input type="number" id="Ff_OBT_milk" value="0.24" step="0.01"><div class="note">Default: 0.24 cow milk</div></div>
+          <div class="ig"><label><span class="sym">WEQ</span> feed (L/kg DM)</label><input type="number" id="WEQ_milk" value="0.51" step="0.01"><div class="note">Default: 0.51</div></div>
+          <div class="ig"><label><span class="sym">R<sub>p</sub></span> feed OBT/TFWT ratio</label><input type="number" id="Rp_milk" value="0.54" step="0.01"><div class="note">Default: 0.54</div></div>
+        </div>
+        <div class="grid2">
+          <div class="ig"><label>H<sub>p</sub> Adult (L/y)</label><input type="number" id="Hp_milk_a" value="182.5" step="1"><div class="note">Indian default (NIN)</div></div>
+          <div class="ig"><label>H<sub>p</sub> Infant (L/y)</label><input type="number" id="Hp_milk_i" value="146.0" step="1"></div>
+        </div>
+        <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_milk" value="1.0" step="0.01" style="max-width:120px;"></div>
+      </div>
+    </div>
+
+    <!-- MEAT -->
+    <div class="mx-card meat-c">
+      <div class="mx-hdr" onclick="toggleMX('meat',this)">
+        <div class="mx-title-wrap"><span class="mx-icon">&#129385;</span><div><div class="mx-name meat-n">Meat</div><div class="mx-sub">HTO &amp; OBT transfer</div></div></div>
+        <span class="mx-arr" id="mx_arr_meat">&#9660;</span>
+      </div>
+      <div class="mx-body" id="mx_body_meat">
+        <div class="grid2">
+          <div class="ig"><label><span class="sym">F<sub>f</sub></span> &mdash; HTO meat transfer (Bq/kg FW)/(Bq/L)</label><input type="number" id="Ff" value="0.67" step="0.01"><div class="note">Default: 0.67 goat meat</div></div>
+          <div class="ig"><label><span class="sym">F<sub>f,OBT</sub></span> &mdash; OBT meat transfer (Bq/kg FW)/(Bq/kg DW)</label><input type="number" id="Ff_OBT_meat" value="0.43" step="0.01"><div class="note">Default: 0.43 goat meat</div></div>
+          <div class="ig"><label><span class="sym">WEQ</span> feed (L/kg DM)</label><input type="number" id="WEQ_meat" value="0.51" step="0.01"><div class="note">Default: 0.51</div></div>
+          <div class="ig"><label><span class="sym">R<sub>p</sub></span> feed OBT/TFWT ratio</label><input type="number" id="Rp_meat" value="0.54" step="0.01"><div class="note">Default: 0.54</div></div>
+        </div>
+        <div class="grid2">
+          <div class="ig"><label>H<sub>p</sub> Adult (kg/y)</label><input type="number" id="Hp_meat_a" value="14.6" step="0.1"><div class="note">Indian default (NIN)</div></div>
+          <div class="ig"><label>H<sub>p</sub> Infant (kg/y)</label><input type="number" id="Hp_meat_i" value="1.2" step="0.1"></div>
+        </div>
+        <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_meat" value="1.0" step="0.01" style="max-width:120px;"></div>
+      </div>
+    </div>
+
+    <!-- FISH -->
+    <div class="mx-card fish-c">
+      <div class="mx-hdr" onclick="toggleMX('fish',this)">
+        <div class="mx-title-wrap"><span class="mx-icon">&#128031;</span><div><div class="mx-name fish-n">Fish</div><div class="mx-sub">Freshwater / Marine / Both &mdash; HTO &amp; OBT via water body</div></div></div>
+        <span class="mx-arr" id="mx_arr_fish">&#9660;</span>
+      </div>
+      <div class="mx-body" id="mx_body_fish">
+        <div class="info-box">C<sub>fish,HTO</sub> = WC<sub>f</sub> &times; C<sub>w</sub> &nbsp;|&nbsp; C<sub>fish,OBT</sub> = (1&minus;WC<sub>f</sub>) &times; WEQ<sub>f</sub> &times; R<sub>f</sub> &times; C<sub>w</sub> &nbsp;|&nbsp; Same equations; C<sub>w</sub> and H<sub>p</sub> differ between freshwater and marine</div>
+
+        <!-- Fish type selection -->
+        <div class="sec-label" style="margin-top:4px;">Include in calculation</div>
+        <div class="toggle-row" style="margin-bottom:12px;">
+          <div class="tbtn a-both" id="fish_btn_both"   onclick="setFishType('both')">&#128031; Both</div>
+          <div class="tbtn"        id="fish_btn_fresh"  onclick="setFishType('fresh')">&#127806; Freshwater only</div>
+          <div class="tbtn"        id="fish_btn_marine" onclick="setFishType('marine')">&#127754; Marine only</div>
+          <div class="tbtn"        id="fish_btn_none"   onclick="setFishType('none')">None None</div>
+        </div>
+
+        <!-- FRESHWATER FISH -->
+        <div id="fresh_fish_section">
+          <div class="sec-label" style="color:#22d3ee;">&#127806; Freshwater Fish Parameters</div>
+          <div class="grid3">
+            <div class="ig"><label><span class="sym">WC<sub>f</sub></span> &mdash; Water content</label><input type="number" id="WCp_fish" value="0.75" step="0.01"><div class="note">Default: 0.75</div></div>
+            <div class="ig"><label><span class="sym">WEQ<sub>f</sub></span> (L/kg DM)</label><input type="number" id="WEQ_fish" value="0.65" step="0.01"><div class="note">Default: 0.65</div></div>
+            <div class="ig"><label><span class="sym">R<sub>f</sub></span> &mdash; OBT partition factor</label><input type="number" id="Rf_fish" value="0.66" step="0.01"><div class="note">Default: 0.66</div></div>
+          </div>
+          <div class="grid2">
+            <div class="ig"><label>H<sub>p</sub> Adult (kg/y)</label><input type="number" id="Hp_fish_a" value="18.3" step="0.1"><div class="note">Indian default (NIN)</div></div>
+            <div class="ig"><label>H<sub>p</sub> Infant (kg/y)</label><input type="number" id="Hp_fish_i" value="1.5" step="0.1"></div>
+          </div>
+          <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_fish" value="1.0" step="0.01" style="max-width:120px;"></div>
+        </div>
+
+        <div class="divider" id="fish_divider"></div>
+
+        <!-- MARINE FISH -->
+        <div id="marine_fish_section">
+          <div class="sec-label" style="color:#38bdf8;">&#127754; Marine (Sea) Fish Parameters</div>
+          <div class="info-box" style="border-color:#38bdf8;">
+            <b>Note:</b> Marine fish use a separate C<sub>w,sea</sub> (HTO in seawater, Bq/L). Same equations apply; parameters may differ from freshwater fish.
+          </div>
+          <div class="ig" style="margin-bottom:10px;">
+            <label><span class="sym">C<sub>w,sea</sub></span> &mdash; Annual avg HTO in seawater (Bq/L)</label>
+            <div class="input-row">
+              <input type="number" id="Cw_sea" placeholder="e.g. 0.10" min="0" step="any">
+              <select id="CwSeaUnit"><option value="1">Bq/L</option><option value="1e-3">mBq/L</option><option value="1000">kBq/L</option></select>
+            </div>
+            <div class="note">Background seawater HTO &asymp; 0.04&ndash;0.12 Bq/L (global average). Enter site-specific value.</div>
+          </div>
+          <div class="grid3">
+            <div class="ig"><label><span class="sym">WC<sub>f</sub></span> &mdash; Water content</label><input type="number" id="WCp_fish_sea" value="0.75" step="0.01"><div class="note">Default: 0.75</div></div>
+            <div class="ig"><label><span class="sym">WEQ<sub>f</sub></span> (L/kg DM)</label><input type="number" id="WEQ_fish_sea" value="0.65" step="0.01"><div class="note">Default: 0.65</div></div>
+            <div class="ig"><label><span class="sym">R<sub>f</sub></span> &mdash; OBT partition factor</label><input type="number" id="Rf_fish_sea" value="0.66" step="0.01"><div class="note">Default: 0.66</div></div>
+          </div>
+          <div class="grid2">
+            <div class="ig"><label>H<sub>p</sub> Adult (kg/y)</label><input type="number" id="Hp_fish_sea_a" value="18.3" step="0.1"><div class="note">Indian default (NIN) &mdash; same as freshwater fish</div></div>
+            <div class="ig"><label>H<sub>p</sub> Infant (kg/y)</label><input type="number" id="Hp_fish_sea_i" value="1.5" step="0.1"><div class="note">Indian default (NIN) &mdash; same as freshwater fish</div></div>
+          </div>
+          <div class="ig"><label>f<sub>d</sub></label><input type="number" id="fd_fish_sea" value="1.0" step="0.01" style="max-width:120px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Food DCF -->
+    <div class="sec-label" style="margin-top:12px;">Food Pathway DCF Values</div>
+    <div class="grid2">
+      <div class="ig"><label>DCF TFWT/HTO Ingestion &mdash; Adult (Sv/Bq)</label><input type="number" id="DCF_TFWT_a" value="1.8e-11" step="any"><div class="note">Default: 1.8&times;10<sup>-11</sup></div></div>
+      <div class="ig"><label>DCF TFWT/HTO Ingestion &mdash; Infant (Sv/Bq)</label><input type="number" id="DCF_TFWT_i" value="6.4e-11" step="any"><div class="note">Default: 6.4&times;10<sup>-11</sup></div></div>
+      <div class="ig"><label>DCF OBT Ingestion &mdash; Adult (Sv/Bq)</label><input type="number" id="DCF_OBT_a" value="4.2e-11" step="any"><div class="note">Default: 4.2&times;10<sup>-11</sup></div></div>
+      <div class="ig"><label>DCF OBT Ingestion &mdash; Infant (Sv/Bq)</label><input type="number" id="DCF_OBT_i" value="1.2e-10" step="any"><div class="note">Default: 1.2&times;10<sup>-10</sup></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- == CALCULATE ============================================================ -->
+<button class="calc-btn" onclick="calculate()">&#9889; Calculate Total Annual Committed Effective Dose</button>
+
+<!-- == RESULTS ============================================================== -->
+<div class="card result-card" id="resCard" style="display:none;">
+  <div class="sec-label">Annual Committed Effective Dose &mdash; All Pathways</div>
+  <div class="grand-dose" id="grandDose">&mdash;</div>
+  <div class="grand-unit"  id="grandUnit">&mdash;</div>
+
+  <table class="rt" id="resTable">
+    <thead><tr>
+      <th>Pathway / Matrix</th><th>Form</th>
+      <th>C<sub>food</sub></th><th>H<sub>p</sub> or BR</th>
+      <th>DCF (Sv/Bq)</th><th>Dose (&micro;Sv/y)</th>
+    </tr></thead>
+    <tbody id="resBody"></tbody>
+  </table>
+
+  <div class="step-box" id="stepBox"></div>
+  <div class="ctx-bar" id="ctxBar"></div>
+</div>
+
+<div class="footnote">
+  ECPDA Methodology &nbsp;|&nbsp; DCF: ICRP Publication 119 &nbsp;|&nbsp;
+  Intake rates: Indian dietary defaults (NIN Hyderabad) &nbsp;|&nbsp;
+  AERB/ICRP public dose limit: 1 mSv/y &nbsp;|&nbsp; WHO IDC (drinking water): 0.1 mSv/y
+</div>
+
+<div style="text-align:center; padding: 12px 0 20px; border-top: 1px solid var(--rule-faint);">
+  <span style="
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  ">Developed by</span>
+  <span style="
+    display: block;
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--navy, #1c2340);
+    margin-top: 4px;
+  ">Sanyam Jain &mdash; EMAD, BARC</span>
+</div>
+
+</div><!-- /wrapper -->
+
+<script>
+let ageGroup='adult', doseType='both', fishType='both';
+
+// -- UI toggles --------------------------------------------------------------
+function setFishType(t) {
+  fishType=t;
+  const map={both:'a-both',fresh:'a-tfwt',marine:'a-adult',none:'a-infant'};
+  ['both','fresh','marine','none'].forEach(k=>{
+    const b=document.getElementById('fish_btn_'+k);
+    b.className='tbtn'; if(k===t) b.classList.add(map[k]);
+  });
+  // Show/hide sections
+  const showFresh  = (t==='both'||t==='fresh');
+  const showMarine = (t==='both'||t==='marine');
+  document.getElementById('fresh_fish_section').style.display  = showFresh  ? '' : 'none';
+  document.getElementById('marine_fish_section').style.display = showMarine ? '' : 'none';
+  document.getElementById('fish_divider').style.display        = (t==='both') ? '' : 'none';
+}
+
+// -- UI toggles --------------------------------------------------------------
+function setAge(a) {
+  ageGroup=a;
+  const map={adult:'a-adult',infant:'a-infant',max:'a-max'};
+  ['adult','infant','max'].forEach(k=>{
+    const b=document.getElementById('t_'+k);
+    b.className='tbtn'; if(k===a) b.classList.add(map[k]);
+  });
+}
+function setDT(t) {
+  doseType=t;
+  ['both','tfwt','obt'].forEach(k=>{
+    const b=document.getElementById('t_'+k);
+    b.className='tbtn'; if(k===t) b.classList.add('a-'+k);
+  });
+}
+function togglePW(id) {
+  const body=document.getElementById('pw_'+id);
+  const arr =document.getElementById('pw_arr_'+id);
+  const col =body.classList.toggle('collapsed');
+  arr.classList.toggle('open', !col);
+}
+function toggleMX(id,hdr) {
+  const body=document.getElementById('mx_body_'+id);
+  const arr =document.getElementById('mx_arr_'+id);
+  const open=body.classList.toggle('open');
+  arr.classList.toggle('open',open);
+}
+function applyBR(who) {
+  const v=document.getElementById('BR_preset_'+who).value;
+  if(v) document.getElementById('BR_'+who).value=v;
+}
+
+// -- Helpers ------------------------------------------------------------------
+function n(id) { return parseFloat(document.getElementById(id).value)||0; }
+function sup(v) {
+  return '<sup>' + String(v) + '</sup>';
+}
+function fs(v) {
+  if(v===0) return '0';
+  const e=Math.floor(Math.log10(Math.abs(v)));
+  const m=v/Math.pow(10,e);
+  if(Math.abs(e)<3) return parseFloat(v.toPrecision(4)).toString();
+  return m.toPrecision(4)+'&times;10'+sup(e);
+}
+function bestU(sv) {
+  if(sv>=1)    return [sv,'Sv/y'];
+  if(sv>=1e-3) return [sv*1e3,'mSv/y'];
+  if(sv>=1e-6) return [sv*1e6,'&micro;Sv/y'];
+  return [sv*1e9,'nSv/y'];
+}
+
+// -- Main calculation ----------------------------------------------------------
+function calculate() {
+  const Ca_bq = n('Ca')*n('CaUnit');
+  const Cw    = n('Cw')*n('CwUnit');
+  const Ha=n('Ha'), CRs=n('CRs'), RH=n('RH'), gam=n('gamma');
+  if(!Ca_bq||!Cw) { alert('Please enter Ca and Cw.'); return; }
+
+  // -- CTFWT chain ----------------------------------------------------------
+  const Cam   = Ca_bq / Ha;                           
+  const CSW   = CRs * Cam;                            
+  const CTFWT = (RH*Cam + (1-RH)*CSW) / gam;         
+
+  let stepHTML = `<span class="pw-sec">-- C<sub>TFWT</sub> Chain --</span><br>
+<b>C<sub>am</sub></b> = C<sub>HTO,atm</sub>/H<sub>a</sub> = ${fs(Ca_bq)}/${Ha} = <b>${fs(Cam)} Bq/L</b> <br>
+<b>C<sub>SW</sub></b> = CR<sub>s</sub>&times;C<sub>am</sub> = ${CRs}&times;${fs(Cam)} = <b>${fs(CSW)} Bq/L</b> <br>
+<b>C<sub>TFWT</sub></b> = (${RH}&times;${fs(Cam)} + ${(1-RH).toFixed(2)}&times;${fs(CSW)})/${gam} = <b>${fs(CTFWT)} Bq/L</b> `;
+
+  const showA  = ageGroup==='adult' ||ageGroup==='max';
+  const showI  = ageGroup==='infant'||ageGroup==='max';
+  const showT  = doseType==='tfwt'  ||doseType==='both';
+  const showO  = doseType==='obt'   ||doseType==='both';
+
+  let rows='', totWA=0, totWI=0, totAirA=0, totAirI=0, totFA=0, totFI=0;
+
+  // -- Pathway 1: Drinking Water ----------------------------------------------
+  const IR_a=n('IR_a'), IR_i=n('IR_i'), ffb=n('ffb');
+  const DCF_wa=n('DCF_w_a'), DCF_wi=n('DCF_w_i');
+  const Dw_a = Cw * 1000 * IR_a * DCF_wa * ffb;   // Cw Bq/L, IR m<sup>3</sup>/y -> &times;1000
+  const Dw_i = Cw * 1000 * IR_i * DCF_wi * ffb;
+
+  rows += `<tr class="pw-hdr water-hdr"><td colspan="6">💧 PATHWAY 1 &mdash; Drinking Water Ingestion</td></tr>`;
+  if(showA) { totWA+=Dw_a; rows+=`<tr><td>Drinking Water</td><td>HTO <small>(Adult)</small></td><td>${fs(Cw)} Bq/L</td><td>${IR_a*1000} L/y</td><td>${fs(DCF_wa)}</td><td><b>${(Dw_a*1e6).toPrecision(4)}</b></td></tr>`; }
+  if(showI) { totWI+=Dw_i; rows+=`<tr><td>Drinking Water</td><td>HTO <small>(Infant)</small></td><td>${fs(Cw)} Bq/L</td><td>${IR_i*1000} L/y</td><td>${fs(DCF_wi)}</td><td><b>${(Dw_i*1e6).toPrecision(4)}</b></td></tr>`; }
+  if(showA) rows+=`<tr class="sub-row water-sub"><td colspan="5">Subtotal &mdash; Water (Adult)</td><td>${(totWA*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+  if(showI) rows+=`<tr class="sub-row water-sub"><td colspan="5">Subtotal &mdash; Water (Infant)</td><td>${(totWI*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+
+  stepHTML += `<br><br><span class="pw-sec">-- Pathway 1: Drinking Water --</span><br>
+<b>D<sub>water,adult</sub></b> = C<sub>w</sub>&times;IR&times;DCF&times;f<sub>fb</sub> = ${fs(Cw)}&times;${IR_a*1000}&times;${fs(DCF_wa)}${ffb!==1?'&times;'+ffb:''} = <b>${fs(Dw_a*1e6)} &micro;Sv/y</b>`;
+
+  // -- Pathway 2: Air Inhalation ----------------------------------------------
+  const BR_a=n('BR_a'), BR_i=n('BR_i');
+  const DCF_ia=n('DCF_inh_a'), DCF_ii=n('DCF_inh_i');
+  const skin = document.getElementById('skinCheck').checked;
+  const skinF = skin ? 1.5 : 1.0;
+  const Dinh_a = Ca_bq * BR_a * DCF_ia * skinF;
+  const Dinh_i = Ca_bq * BR_i * DCF_ii * skinF;
+
+  rows += `<tr class="pw-hdr air-hdr"><td colspan="6">🌬 PATHWAY 2 &mdash; Inhalation${skin?' + Skin Absorption':''}</td></tr>`;
+  if(showA) { totAirA+=Dinh_a; rows+=`<tr><td>Air (HTO)</td><td>Inhalation${skin?' + Skin':''} <small>(Adult)</small></td><td>${fs(Ca_bq)} Bq/m<sup>3</sup></td><td>${BR_a} m<sup>3</sup>/y</td><td>${fs(DCF_ia)}${skin?' &times;1.5':''}</td><td><b>${(Dinh_a*1e6).toPrecision(4)}</b></td></tr>`; }
+  if(showI) { totAirI+=Dinh_i; rows+=`<tr><td>Air (HTO)</td><td>Inhalation${skin?' + Skin':''} <small>(Infant)</small></td><td>${fs(Ca_bq)} Bq/m<sup>3</sup></td><td>${BR_i} m<sup>3</sup>/y</td><td>${fs(DCF_ii)}${skin?' &times;1.5':''}</td><td><b>${(Dinh_i*1e6).toPrecision(4)}</b></td></tr>`; }
+  if(showA) rows+=`<tr class="sub-row air-sub"><td colspan="5">Subtotal &mdash; Inhalation (Adult)</td><td>${(totAirA*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+  if(showI) rows+=`<tr class="sub-row air-sub"><td colspan="5">Subtotal &mdash; Inhalation (Infant)</td><td>${(totAirI*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+
+  stepHTML += `<br><br><span class="pw-sec">-- Pathway 2: Inhalation --</span><br>
+<b>D<sub>inh,adult</sub></b> = C<sub>a</sub>&times;BR&times;DCF${skin?'&times;1.5':''} = ${fs(Ca_bq)}&times;${BR_a}&times;${fs(DCF_ia)}${skin?'&times;1.5':''} = <b>${fs(Dinh_a*1e6)} &micro;Sv/y</b>`;
+
+  // -- Pathway 3: Food --------------------------------------------------------
+  // Concentrations
+  const WCp_v=n('WCp_veg'), WEQ_v=n('WEQ_veg'), Rp_v=n('Rp_veg');
+  const Cv_T = WCp_v * CTFWT;
+  const Cv_O = (1-WCp_v)*WEQ_v*Rp_v*CTFWT;
+
+  const WCp_c=n('WCp_cereal'), WEQ_c=n('WEQ_cereal'), Rp_c=n('Rp_cereal');
+  const Cc_T = WCp_c * CTFWT;
+  const Cc_O = (1-WCp_c)*WEQ_c*Rp_c*CTFWT;
+
+  const WEQ_m=n('WEQ_milk'), Rp_m=n('Rp_milk');
+  const Cfeed_m  = WEQ_m * Rp_m * CTFWT;
+  const Cm_T = n('Fm') * Cw;
+  const Cm_O = n('Ff_OBT_milk') * Cfeed_m;
+
+  const WEQ_mt=n('WEQ_meat'), Rp_mt=n('Rp_meat');
+  const Cfeed_mt = WEQ_mt * Rp_mt * CTFWT;
+  const Cmt_T = n('Ff') * Cw;
+  const Cmt_O = n('Ff_OBT_meat') * Cfeed_mt;
+
+  const WCf=n('WCp_fish'), WEQf=n('WEQ_fish'), Rf=n('Rf_fish');
+  const Cf_T = WCf * Cw;
+  const Cf_O = (1-WCf)*WEQf*Rf*Cw;
+
+  // Marine fish &mdash; separate Cw_sea
+  const Cw_sea   = n('Cw_sea')*n('CwSeaUnit');
+  const WCf_sea  = n('WCp_fish_sea'), WEQf_sea=n('WEQ_fish_sea'), Rf_sea=n('Rf_fish_sea');
+  const Cf_T_sea = WCf_sea * Cw_sea;
+  const Cf_O_sea = (1-WCf_sea)*WEQf_sea*Rf_sea*Cw_sea;
+
+  const dT_a=n('DCF_TFWT_a'), dT_i=n('DCF_TFWT_i');
+  const dO_a=n('DCF_OBT_a'),  dO_i=n('DCF_OBT_i');
+  function D(C,Hp,DCF,fd) { return C*Hp*DCF*fd; }
+
+  rows += `<tr class="pw-hdr food-hdr"><td colspan="6">🍽 PATHWAY 3 &mdash; Food Ingestion TFWT &amp; OBT</td></tr>`;
+  stepHTML += `<br><br><span class="pw-sec">-- Pathway 3: Food (C<sub>TFWT</sub>=${fs(CTFWT)} Bq/L) --</span><br>
+<b>Veg</b>: TFWT=${fs(Cv_T)}, OBT=${fs(Cv_O)} Bq/kg FW &emsp;
+<b>Cereal</b>: TFWT=${fs(Cc_T)}, OBT=${fs(Cc_O)} Bq/kg FW<br>
+<b>C<sub>feed,OBT</sub></b>=WEQ&times;Rp&times;CTFWT=${fs(Cfeed_m)} Bq/kg DW &emsp;
+<b>Milk</b>: TFWT=${fs(Cm_T)}, OBT=${fs(Cm_O)} Bq/kg FW<br>
+<b>Meat</b>: TFWT=${fs(Cmt_T)}, OBT=${fs(Cmt_O)} Bq/kg FW &emsp;
+${(fishType==='both'||fishType==='fresh') ? `<b>Freshwater Fish</b>: HTO=${fs(Cf_T)}, OBT=${fs(Cf_O)} Bq/kg FW` : ''}
+${(fishType==='both') ? '<br>' : ''}
+${(fishType==='both'||fishType==='marine') ? `<b>Marine Fish</b> (C<sub>w,sea</sub>=${fs(Cw_sea)} Bq/L): HTO=${fs(Cf_T_sea)}, OBT=${fs(Cf_O_sea)} Bq/kg FW` : ''}`;
+
+  function addFoodRows(label, CT, CO, Hp_a, Hp_i, fda, fdi) {
+    if(showA) {
+      if(showT){ const d=D(CT,Hp_a,dT_a,fda); totFA+=d; rows+=`<tr class="tfwt-row"><td>${label}</td><td>TFWT <small>(A)</small></td><td>${fs(CT)}</td><td>${Hp_a}</td><td>${fs(dT_a)}</td><td><b>${(d*1e6).toPrecision(3)}</b></td></tr>`; }
+      if(showO){ const d=D(CO,Hp_a,dO_a,fda); totFA+=d; rows+=`<tr class="obt-row"><td>${label}</td><td>OBT <small>(A)</small></td><td>${fs(CO)}</td><td>${Hp_a}</td><td>${fs(dO_a)}</td><td><b>${(d*1e6).toPrecision(3)}</b></td></tr>`; }
+    }
+    if(showI) {
+      if(showT){ const d=D(CT,Hp_i,dT_i,fdi); totFI+=d; rows+=`<tr class="tfwt-row"><td>${label}</td><td>TFWT <small>(I)</small></td><td>${fs(CT)}</td><td>${Hp_i}</td><td>${fs(dT_i)}</td><td><b>${(d*1e6).toPrecision(3)}</b></td></tr>`; }
+      if(showO){ const d=D(CO,Hp_i,dO_i,fdi); totFI+=d; rows+=`<tr class="obt-row"><td>${label}</td><td>OBT <small>(I)</small></td><td>${fs(CO)}</td><td>${Hp_i}</td><td>${fs(dO_i)}</td><td><b>${(d*1e6).toPrecision(3)}</b></td></tr>`; }
+    }
+  }
+
+  addFoodRows('Vegetables', Cv_T, Cv_O, n('Hp_veg_a'), n('Hp_veg_i'), n('fd_veg'), n('fd_veg'));
+  addFoodRows('Cereals', Cc_T, Cc_O, n('Hp_cereal_a'), n('Hp_cereal_i'), n('fd_cereal'), n('fd_cereal'));
+  addFoodRows('Milk', Cm_T, Cm_O, n('Hp_milk_a'), n('Hp_milk_i'), n('fd_milk'), n('fd_milk'));
+  addFoodRows('Meat', Cmt_T, Cmt_O, n('Hp_meat_a'), n('Hp_meat_i'), n('fd_meat'), n('fd_meat'));
+  if(fishType==='both'||fishType==='fresh')
+    addFoodRows('Fish (Freshwater)', Cf_T, Cf_O, n('Hp_fish_a'), n('Hp_fish_i'), n('fd_fish'), n('fd_fish'));
+  if(fishType==='both'||fishType==='marine')
+    addFoodRows('Fish (Marine)', Cf_T_sea, Cf_O_sea, n('Hp_fish_sea_a'), n('Hp_fish_sea_i'), n('fd_fish_sea'), n('fd_fish_sea'));
+
+  if(showA) rows+=`<tr class="sub-row food-sub"><td colspan="5">Subtotal &mdash; Food (Adult)</td><td>${(totFA*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+  if(showI) rows+=`<tr class="sub-row food-sub"><td colspan="5">Subtotal &mdash; Food (Infant)</td><td>${(totFI*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+
+  // -- Grand total ------------------------------------------------------------
+  const grandA = totWA + totAirA + totFA;
+  const grandI = totWI + totAirI + totFI;
+
+  if(showA) rows+=`<tr class="grand-row"><td colspan="5">GRAND TOTAL &mdash; Adult (Water + Inhalation + Food)</td><td>${(grandA*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+  if(showI) rows+=`<tr class="grand-row"><td colspan="5">GRAND TOTAL &mdash; Infant (Water + Inhalation + Food)</td><td>${(grandI*1e6).toPrecision(4)} &micro;Sv/y</td></tr>`;
+
+  document.getElementById('resBody').innerHTML = rows;
+
+  // Big display
+  const primary = ageGroup==='infant' ? grandI : ageGroup==='max' ? Math.max(grandA,grandI) : grandA;
+  const [dv,du] = bestU(primary);
+  document.getElementById('grandDose').textContent = dv.toPrecision(4);
+  document.getElementById('grandUnit').innerHTML  = du + (ageGroup==='max' ? ' &mdash; max(Adult, Infant)' : ` &mdash; ${ageGroup}`);
+
+  // Breakdown annotation
+  if(showA) {
+    stepHTML += `<br><br><span class="pw-sec">-- Grand Total (Adult) --</span><br>
+<b>Water</b>: ${(totWA*1e6).toPrecision(4)} &micro;Sv/y &emsp;
+<b>Inhalation</b>: ${(totAirA*1e6).toPrecision(4)} &micro;Sv/y &emsp;
+<b>Food</b>: ${(totFA*1e6).toPrecision(4)} &micro;Sv/y<br>
+<b>TOTAL</b> = ${(grandA*1e6).toPrecision(4)} &micro;Sv/y = <b>${(grandA*1e3).toPrecision(4)} mSv/y</b>`;
+  }
+
+  document.getElementById('stepBox').innerHTML = stepHTML;
+
+  // Context chips
+  const dmsv = primary * 1e3;
+  let chips = `<div class="chip c-info">AERB/ICRP limit: 1 mSv/y</div>`;
+  chips += `<div class="chip c-info">WHO IDC (water): 0.1 mSv/y</div>`;
+  if(dmsv<0.01)      chips+=`<div class="chip c-low">OK Negligible (&lt;0.01 mSv/y)</div>`;
+  else if(dmsv<0.1)  chips+=`<div class="chip c-low">OK Below WHO IDC</div>`;
+  else if(dmsv<1.0)  chips+=`<div class="chip c-low">OK Low (&lt;1 mSv/y)</div>`;
+  else if(dmsv<20)   chips+=`<div class="chip c-med">! Moderate</div>`;
+  else               chips+=`<div class="chip c-high">🚨 High (&gt;20 mSv/y)</div>`;
+  chips += `<div class="chip c-info">AERB limit: ${(dmsv/1*100).toPrecision(3)}%</div>`;
+  if(showA) {
+    chips += `<div class="chip c-info">Water: ${(totWA/grandA*100).toPrecision(3)}%</div>`;
+    chips += `<div class="chip c-info">Inhalation: ${(totAirA/grandA*100).toPrecision(3)}%</div>`;
+    chips += `<div class="chip c-info">Food: ${(totFA/grandA*100).toPrecision(3)}%</div>`;
+  }
+
+  document.getElementById('ctxBar').innerHTML = chips;
+  document.getElementById('resCard').style.display = 'block';
+  document.getElementById('resCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+</body>
+</html>
