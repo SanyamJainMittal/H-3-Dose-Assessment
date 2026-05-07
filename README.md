@@ -1,4 +1,4 @@
-# Tritium Dose Assessment Calculator
+# Tritium Dose Assessment
 
 A multi-pathway tritium (³H) committed effective dose (CED) 
 calculator based on the Public Dose Computation recommendation by AERB (India)
