@@ -43,15 +43,12 @@ Equation | Description |
 
 ## How to Use
 
-1. Download `Tritium_Dose_Assessment.html`
-2. Open in any browser (Chrome, Firefox, Edge)
-3. Enter annual average concentrations:
-   - CHTO,atm (Bq/m³) — tritium in ground-level air
-   - Cw (Bq/L) — tritium in water
-4. Adjust parameters if site-specific data are available
-5. Click **Calculate** to get annual CED across all pathways
+### Option A — Run Online (Recommended)
+Visit the live calculator:
+https://sanyamjainmittal.github.io/H-3-Dose-Assessment/
 
-No internet connection, server, or installation required.
+### Option B — Download and Run Offline
+Download index.html and open it in any browser.
 
 ## References
 
